@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Pure Live Remote</title>
+  <style>
+    body{font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;margin:0;background:#f5f6f8;color:#1d2129}
+    main{max-width:1180px;margin:32px auto;padding:0 18px}.panel{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:18px;margin-bottom:18px}
+    h1{margin:0 0 8px}.muted{color:#667085}.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}input,select{width:100%;box-sizing:border-box;padding:9px;border:1px solid #d0d5dd;border-radius:8px}
+    button,.button{border:0;border-radius:8px;padding:9px 13px;background:#111827;color:#fff;cursor:pointer;text-decoration:none;display:inline-block}.danger{background:#b42318}.secondary{background:#475467}
+    table{width:100%;border-collapse:collapse}th,td{text-align:left;padding:10px;border-bottom:1px solid #eaecf0;vertical-align:middle}.media{display:flex;gap:8px;align-items:center}.avatar{width:44px;height:44px;border-radius:50%;object-fit:cover}.cover{width:96px;height:54px;border-radius:7px;object-fit:cover}
+    form.inline{display:inline}.actions{display:flex;gap:6px;flex-wrap:wrap}.status-live{color:#067647;font-weight:700}.status-offline{color:#b42318;font-weight:700}
+    @media(max-width:850px){.grid{grid-template-columns:1fr 1fr}.table-wrap{overflow:auto}}@media(max-width:560px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body><main>
+  <section class="panel"><h1>Pure Live Remote</h1><div class="muted">Test 分支 · Phase 2</div><p>M3U：<code>{{ base_url }}/playlist.m3u</code></p></section>
+  {% if message %}<section class="panel">{{ message }}</section>{% endif %}
+  <section class="panel">
+    <h2>添加直播间</h2>
+    <form method="post" action="/admin/rooms">
+      <div class="grid">
+        <label>平台<input name="platform" required placeholder="bilibili"></label>
+        <label>房间号<input name="room_id" required></label>
+        <label>主播名<input name="name"></label>
+        <label>分组<input name="group_name" value="Live"></label>
+        <label>直播间 URL<input name="source_url"></label>
+        <label>主播头像 URL<input name="avatar_url"></label>
+        <label>直播封面 URL<input name="current_cover_url"></label>
+        <label>状态<select name="last_status"><option value="unknown">unknown</option><option value="live">live</option><option value="offline">offline</option><option value="replay">replay</option></select></label>
+      </div><p><button type="submit">添加</button></p>
+    </form>
+  </section>
+  <section class="panel"><h2>直播间</h2><div class="table-wrap"><table>
+    <thead><tr><th>媒体</th><th>主播 / 平台</th><th>状态</th><th>分组</th><th>播放</th><th>操作</th></tr></thead>
+    <tbody>
+    {% for room in rooms %}
+      <tr>
+        <td><div class="media"><img class="avatar" src="/media/logo/{{ room.uuid }}.png?v={{ room.updated_at|urlencode }}"><img class="cover" src="/media/cover/{{ room.uuid }}?v={{ room.updated_at|urlencode }}"></div></td>
+        <td><strong>{{ room.custom_name or room.name or room.room_id }}</strong><div class="muted">{{ room.platform }} · {{ room.room_id }}</div></td>
+        <td class="status-{{ room.last_status }}">{{ room.last_status }}</td><td>{{ room.group_name }}</td><td>{{ room.play_mode }} / {{ room.preferred_quality }}</td>
+        <td><div class="actions"><a class="button secondary" href="/admin/rooms/{{ room.uuid }}/edit">编辑</a><form class="inline" method="post" action="/admin/rooms/{{ room.uuid }}/refresh-media"><button type="submit" class="secondary">刷新媒体</button></form><form class="inline" method="post" action="/admin/rooms/{{ room.uuid }}/delete" onsubmit="return confirm('确认删除？')"><button type="submit" class="danger">删除</button></form></div></td>
+      </tr>
+    {% else %}<tr><td colspan="6" class="muted">还没有直播间。</td></tr>{% endfor %}
+    </tbody>
+  </table></div></section>
+</main></body></html>
