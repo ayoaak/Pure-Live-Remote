@@ -1,0 +1,16 @@
+services:
+  pure-live-remote:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: pure-live-remote
+    restart: unless-stopped
+    ports:
+      - "${PORT:-35455}:${PORT:-35455}"
+    environment:
+      TZ: ${TZ:-Asia/Shanghai}
+      PORT: ${PORT:-35455}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-http://127.0.0.1:35455}
+      DATA_DIR: /data
+    volumes:
+      - ./data:/data
