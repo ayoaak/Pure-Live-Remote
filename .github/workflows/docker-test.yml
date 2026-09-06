@@ -1,0 +1,42 @@
+name: Test branch validation
+
+on:
+  push:
+    branches: [Test]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install -r requirements-dev.txt
+      - run: pytest -q
+
+  docker-smoke:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t pure-live-remote:test .
+      - name: Run container
+        run: docker run -d --name pure-live-remote-test -p 35455:35455 -e PUBLIC_BASE_URL=http://127.0.0.1:35455 pure-live-remote:test
+      - name: Wait for health
+        run: |
+          for i in {1..30}; do
+            if curl -fsS http://127.0.0.1:35455/health; then exit 0; fi
+            sleep 1
+          done
+          docker logs pure-live-remote-test
+          exit 1
+      - name: Check M3U
+        run: curl -fsS http://127.0.0.1:35455/playlist.m3u | grep -q '^#EXTM3U'
+      - name: Check admin
+        run: curl -fsS http://127.0.0.1:35455/admin | grep -q 'Pure Live Remote'
+      - name: Logs on failure
+        if: failure()
+        run: docker logs pure-live-remote-test || true
